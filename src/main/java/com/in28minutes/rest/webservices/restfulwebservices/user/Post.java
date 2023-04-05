@@ -2,10 +2,9 @@ package com.in28minutes.rest.webservices.restfulwebservices.user;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Min;
 
-/**
- * @author E.Parominsky 04/04/2023 08:19
- */
+
 @Entity
 public class Post {
 
@@ -13,11 +12,20 @@ public class Post {
     @GeneratedValue
     private Integer id;
 
+//    @Min(10)
     private String description;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JsonIgnore
     private User user;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     public Integer getId() {
         return id;

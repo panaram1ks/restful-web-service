@@ -1,5 +1,6 @@
 package com.in28minutes.rest.webservices.restfulwebservices.user;
 
+import com.in28minutes.rest.webservices.restfulwebservices.jpa.PostRepository;
 import com.in28minutes.rest.webservices.restfulwebservices.jpa.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.hateoas.EntityModel;
@@ -11,14 +12,18 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 @RestController
 public class UserJpaResource {
 
     private UserRepository userRepository;
 
-    public UserJpaResource(UserRepository userRepository) {
+    private PostRepository postRepository;
+
+    public UserJpaResource(UserRepository userRepository, PostRepository postRepository) {
         this.userRepository = userRepository;
+        this.postRepository = postRepository;
     }
 
     @GetMapping("/jpa/users")
@@ -64,11 +69,40 @@ public class UserJpaResource {
     @GetMapping("/jpa/users/{id}/posts")
     public List<Post> retrievePostsForUser(@PathVariable int id) {
         Optional<User> user = userRepository.findById(id);
-        if(user.isEmpty()){
+        if (user.isEmpty()) {
             throw new UserNotFoundException("id " + id);
         }
         return user.get().getPosts();
     }
 
+    @PostMapping("/jpa/users/{id}/posts")
+    public ResponseEntity<Object> createPostForUser(@PathVariable int id, @Valid @RequestBody Post post) {
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("id " + id);
+        }
+        post.setUser(user.get());
+        Post savedPost = postRepository.save(post);
+        URI location = ServletUriComponentsBuilder.fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(savedPost.getId())
+                .toUri();
+        return ResponseEntity.created(location).build();
+    }
+
+    @GetMapping("/jpa/users/{idUser}/posts/{idPost}")
+    public ResponseEntity<Object> retrievePostFromUser(@PathVariable Integer idUser, @PathVariable Integer idPost) {
+        Optional<User> user = userRepository.findById(idUser);
+        User userReal = user.orElseGet(null);
+        if (userReal != null) {
+            List<Post> posts = userReal.getPosts();
+            Predicate<Post> predicate = post -> post.getId().equals(idPost);
+            Post post = posts.stream().filter(predicate).findFirst().orElse(null);
+            return ResponseEntity.ok(post);
+        } else {
+            throw new UserNotFoundException("User did not find");
+        }
+
+    }
 
 }
