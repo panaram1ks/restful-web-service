@@ -1,0 +1,9 @@
+    mysqlsh
+    \connect social-media-user@localhost:3306
+    \use social-media-database
+    \sql
+
+    select * from user_details;
+    select * from post;
+
+    \quit
